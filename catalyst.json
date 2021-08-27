@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "targets": [
+      "ZLinks"
+    ],
+    "ignore": [
+      ".output"
+    ],
+    "source": "functions"
+  },
+  "client": {
+    "source": "client"
+  }
+}
