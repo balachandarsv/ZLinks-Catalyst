@@ -10,16 +10,15 @@
     <script src="https://static.zohocdn.com/catalyst/sdk/js/2.0.0/catalystWebSDK.js"></script>
     <script src="/__catalyst/sdk/init.js"></script>
     <script type="text/javascript">
-        
-    catalyst.auth.isValidUser().then(function(data){if(data.content.error_code){
-        window.location.href = "/";
-    }})
-
+    catalyst.auth.isValidUser().then(function(data) {
+        if (data.content.error_code) {
+            window.location.href = "/";
+        }
+    })
     </script>
 </head>
 
 <body class="flex flex-row justify-center items-center" x-data="getData()" x-init="init()">
-
     <div class="fixed top-0 left-0 z-50 block w-full h-full bg-no-repeat bg-gradient-to-b from-red-300 to-pink-300" :class="!loading ? 'hidden':'flex items-center justify-center'">
         <span class="text-green-500">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-32 h-32 text-white animate-spin" fill="currentColor" viewBox="0 0 24 24">
@@ -27,7 +26,7 @@
             </svg>
         </span>
     </div>
-    <div class="w-8/12 h-screen border-r border-gray-400 overflow-scroll">
+    <div class="w-8/12 h-full  border-r border-gray-400 overflow-scroll">
         <div class="antialiased text-gray-900 px-6">
             <div class="max-w-xl mx-auto py-12 md:max-w-4xl">
                 <div x-show="isNotificationShow" class="absolute top-0 right-0 m-3 w-2/3 md:w-1/3" x-transition:enter="transition transform ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition transform ease-in duration-300" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1">
@@ -64,7 +63,7 @@
                             <input type="text" class="form-input mt-1 block w-full" x-model="site" placeholder="Site Name" />
                         </label>
                         <label>
-                            <p class="text-gray-700">You can access your ZLinks site at <span class="font-bold"> https://zlinks.com/</span><span class="font-bold" x-text="site"></span></p>
+                            <p class="text-gray-700">You can access your ZLinks site at <span class="font-bold"> https://shrt.host/</span><span class="font-bold" x-text="site"></span></p>
                         </label>
                         <label class="block">
                             <span class="text-gray-700">Logo URL</span>
@@ -259,7 +258,7 @@
                 </div>
                 <div class="grid m-2 gap-y-2 grid-cols-1 w-4/5">
                     <template x-for=" item in filteredlinks" :key="item">
-                        <div class="flex flex-col cursor-pointer" :class="{ 'animate-shakex ': item.highlight === true }" @click="action(item.url, user, item.id)">
+                        <div class="flex flex-col cursor-pointer" :class="{ 'animate-shakex ': item.highlight === true }" @click="action(item.url)">
                             <div class="bg-white shadow-md rounded-3xl p-4">
                                 <div class="flex flex-col">
                                     <div class="flex flex-row gap-4">
@@ -369,12 +368,11 @@
     <script src="https://unpkg.com/uuid@latest/dist/umd/uuidv4.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
     <script>
-
     function timeAgo(timestamp) {
         return dayjs.unix(timestamp).fromNow();
     }
 
-    function action(url, user, pid) {
+    function action(url) {
         setTimeout(function() {
             // window.open(url);
         }, 1000);
@@ -384,7 +382,9 @@
         return {
             loading: true,
             logo: "https://via.placeholder.com/150",
-            site:uuidv4().replaceAll("-",""),
+            site: uuidv4().replaceAll("-", ""),
+            prvsite: "",
+            id: "",
             title: "",
             user: "",
             description: "",
@@ -422,58 +422,6 @@
             showldjson: false,
             loadContent: "{}",
             activeTab: 0,
-            onDrop(event) {
-                console.log("dropped")
-                // rearrange the array by inserting the dropped element
-                console.log(this.draggingIndex)
-                console.log(this.droppingIndex)
-                if (this.draggingIndex !== null && this.droppingIndex !== null) {
-                    if (this.draggingIndex < this.droppingIndex) {
-
-                        this.links = [
-                            ...this.links.slice(0, this.draggingIndex),
-                            ...this.links.slice(this.draggingIndex + 1, this.droppingIndex + 1),
-                            this.links[this.draggingIndex],
-                            ...this.links.slice(this.droppingIndex + 1)
-                        ];
-                    } else if (this.draggingIndex == this.droppingIndex) {
-                        console.log("here")
-                        // do nothing if the drag and drop index is the same
-                    } else {
-                        this.links = [
-                            ...this.links.slice(0, this.droppingIndex),
-                            this.links[this.draggingIndex],
-                            ...this.links.slice(this.droppingIndex, this.draggingIndex),
-                            ...this.links.slice(this.draggingIndex + 1)
-                        ];
-                    }
-                };
-            },
-            onDragover(event) {
-                console.log("drag over")
-                event.dataTransfer.dropEffect = "move";
-            },
-            onDragstart(index) {
-                console.log("drag start")
-                this.draggingIndex = index;
-            },
-            onDragend() {
-                console.log("drag end")
-                this.draggingIndex = null;
-                this.droppingIndex = null;
-            },
-            onDragenter(event, index) {
-                console.log("enter")
-                event.preventDefault();
-                this.droppingIndex = index;
-
-            },
-            onDragleave(index) {
-                console.log("leave")
-                if (index === this.droppingIndex) {
-                    this.droppingIndex = null;
-                }
-            },
             saveGeneral() {
                 var data = {};
                 data["zuid"] = this.user;
@@ -485,38 +433,83 @@
                 data["code"] = this.background["code"];
                 data["type"] = this.background["type"];
                 try {
+                    console.log(this.prvsite !== this.site)
+                    console.log(this.prvsite + "==" + this.site)
+
+                    var self = this;
                     var datastore = catalyst.table;
                     var table = datastore.tableId('zlinks');
-                    var allRowPromise = table.getAllRows();
-                    allRowPromise
-                        .then((response) => {
-                            if (response.content.length > 0) {
+                    if (this.id) {
+                        var rowPromise = table.rowId(this.id).get();
+                        rowPromise
+                            .then((response) => {
+                                var functions = catalyst.function;
+                                var functionObject = functions.functionId("ZLinks");
+                                var config = {
+                                    "args": { "name": self.id, "clear": "true" },
+                                    "method": "GET"
+                                };
+                                functionObject.execute(config);
                                 var datax = response.content;
                                 var datastore = catalyst.table;
                                 var table = datastore.tableId('zlinks');
-                                data["ROWID"] = datax[0]["ROWID"];
-                                var insertPromise = table.updateRow([data]);
-                                this.notificationContent = "Your data is saved.";
-                                this.isNotificationShow = true;
-                                var self = this;
+
+                                if (datax) {
+                                    data["ROWID"] = datax["ROWID"];
+                                    table.updateRow([data]);
+                                    this.notificationContent = "Your data is saved.";
+                                    this.isNotificationShow = true;
+                                } else {
+                                    table.addRow([data]);
+                                    this.notificationContent = "Your data is saved.";
+                                    this.isNotificationShow = true;
+                                    setTimeout(function() {
+                                        self.isNotificationShow = false;
+                                    }, 3000);
+                                }
                                 setTimeout(function() {
-                                    self.isNotificationShow = false;
-                                }, 3000);
-                            } else {
-                                var datastore = catalyst.table;
-                                var table = datastore.tableId('zlinks');
-                                console.log(data);
-                                var insertPromise = table.addRow([data]);
-                                this.notificationContent = "Your data is saved.";
-                                this.isNotificationShow = true;
-                                var self = this;
-                                setTimeout(function() {
-                                    self.isNotificationShow = false;
-                                }, 3000);
-                            }
+
+
+                                    if (self.prvsite !== self.site) {
+                                        var functions = catalyst.function;
+                                        var functionObject = functions.functionId("ShortURL");
+                                        var config = {
+                                            "args": { "name": self.id },
+                                            "method": "GET"
+                                        };
+                                        functionObject.execute(config);
+                                    }
+                                }, 5000);
+
+                            });
+                    } else {
+                        
+                        var datastore = catalyst.table;
+                        var table = datastore.tableId('zlinks');
+                        var added = table.addRow([data]);
+                        added.then(function(resp){
+                            self.init();
+                            console.log(resp)
+                            var functions = catalyst.function;
+                                var functionObject = functions.functionId("ShortURL");
+                                var config = {
+                                    "args": { "name": resp.content[0].ROWID },
+                                    "method": "GET"
+                                };
+                                functionObject.execute(config);
                         })
-                } catch {
-                    console.log("Error occured")
+                        this.notificationContent = "Your data is saved.";
+                        this.isNotificationShow = true;
+                        setTimeout(function() {
+                            self.isNotificationShow = false;
+                        }, 3000);
+
+
+                    };
+
+                } catch (err) {
+
+                    console.log(err)
                 }
             },
             saveSocial() {
@@ -539,31 +532,35 @@
                 data["showgh"] = this.showgh;
 
                 try {
+                    var self = this;
                     var datastore = catalyst.table;
                     var table = datastore.tableId('zlinks');
-                    var allRowPromise = table.getAllRows();
-                    allRowPromise
+                    console.log(this.id);
+                    var rowPromise = table.rowId(this.id).get();
+                    rowPromise
                         .then((response) => {
-                            if (response.content.length > 0) {
-                                var datax = response.content;
-                                var datastore = catalyst.table;
-                                var table = datastore.tableId('zlinks');
-                                data["ROWID"] = datax[0]["ROWID"];
-                                var insertPromise = table.updateRow([data]);
-                                this.notificationContent = "Your data is saved.";
-                                this.isNotificationShow = true;
-                                var self = this;
+                            var functions = catalyst.function;
+                            var functionObject = functions.functionId("ZLinks");
+                            var config = {
+                                "args": { "name": self.id, "clear": "true" },
+                                "method": "GET"
+                            };
+                            functionObject.execute(config);
+                            var datax = response.content;
+                            var datastore = catalyst.table;
+                            var table = datastore.tableId('zlinks');
+                            data["ROWID"] = datax["ROWID"];
+                            if (response.content) {
+                                table.updateRow([data]);
+                                self.notificationContent = "Your data is saved.";
+                                self.isNotificationShow = true;
                                 setTimeout(function() {
                                     self.isNotificationShow = false;
                                 }, 3000);
                             } else {
-                                var datastore = catalyst.table;
-                                var table = datastore.tableId('zlinks');
-                                console.log(data);
-                                var insertPromise = table.addRow([data]);
-                                this.notificationContent = "Your data is saved.";
-                                this.isNotificationShow = true;
-                                var self = this;
+                                table.addRow([data]);
+                                self.notificationContent = "Your data is saved.";
+                                self.isNotificationShow = true;
                                 setTimeout(function() {
                                     self.isNotificationShow = false;
                                 }, 3000);
@@ -579,11 +576,15 @@
                 var self = this;
                 try {
                     userManagement.getCurrentProjectUser().then(function(user) {
-                        if (!user.content.zuid) {
+                        if (!user.content.zaaid) {
                             window.location.href = "./login.html";
                         }
                         user = user.content;
-                        self.user = user.zuid;
+                        self.user = user.zaaid;
+
+                        var datastore = catalyst.table;
+                        var table = datastore.tableId('zlinks');
+
 
                         var datastore = catalyst.table;
                         var table = datastore.tableId('zlinks');
@@ -593,7 +594,9 @@
                                 if (response.content.length > 0) {
                                     var data = response.content[0];
                                     self.title = data.title;
+                                    self.id = data.ROWID;
                                     self.site = data.site;
+                                    self.prvsite = data.site;
                                     self.description = data.description;
                                     self.logo = data.logo;
                                     self.social = data.social;
@@ -615,6 +618,8 @@
                                     self.showyt = data.showyt;
                                     self.github = data.github;
                                     self.showgh = data.showgh;
+                                } else {
+                                    self.loading = false;
                                 }
                             })
                         var datastore = catalyst.table;
@@ -623,7 +628,8 @@
                         allRowPromise
                             .then((response) => {
                                 if (response.content.length > 0) {
-                                    self.links = response.content;
+                                    var lnx = response.content;
+                                    self.links = lnx.reverse();;
                                 }
                             })
                     })
@@ -634,43 +640,72 @@
             saveLink(index) {
                 var data = this.links[index];
                 try {
-                    let searchObj = {
-                        "search": data.linkid,
-                        "search_table_columns": {
-                            "links": ["linkid"]
-                        }
-                    };
+
                     var self = this;
                     data["zuid"] = this.user;
-                    catalyst.search.searchQuery(searchObj).then(function(searchRes) {
-                        if (searchRes.content.links) {
-                            var link = searchRes.content.links[0];
-                            data["ROWID"] = link["ROWID"];
-                            var datastore = catalyst.table;
-                            var table = datastore.tableId('links');
-                            var insertPromise = table.updateRow([data]);
-                            self.notificationContent = "Link saved.";
-                            self.isNotificationShow = true;
-                            setTimeout(function() {
-                                self.isNotificationShow = false;
-                            }, 3000);
-                        } else {
-                            var datastore = catalyst.table;
-                            var table = datastore.tableId('links');
-                            var insertPromise = table.addRow([data]);
-                            self.notificationContent = "Link saved.";
-                            self.isNotificationShow = true;
-                            setTimeout(function() {
-                                self.isNotificationShow = false;
-                            }, 3000);
+                    var datastore = catalyst.table;
+                    var table = datastore.tableId('links');
+                    if (data["ROWID"]) {
+                        var row = table.rowId(data["ROWID"]).get();
+                        row.then(function(resp) {
+                            if (resp.content) {
+                                table.updateRow([data]);
+                                self.notificationContent = "Link saved.";
+                                self.isNotificationShow = true;
+                                var functions = catalyst.function;
+                                var functionObject = functions.functionId("ZLinks");
+                                var config = {
+                                    "args": { "name": self.id, "clear": "true" },
+                                    "method": "GET"
+                                };
+                                functionObject.execute(config);
+                                setTimeout(function() {
+                                    self.isNotificationShow = false;
+                                    self.init()
+                                }, 3000);
+                            } else {
 
-                        }
-                    });
+
+                                table.addRow([data]);
+                                self.notificationContent = "Link saved.";
+                                self.isNotificationShow = true;
+                                var functions = catalyst.function;
+                                var functionObject = functions.functionId("ZLinks");
+                                var config = {
+                                    "args": { "name": self.id, "clear": "true" },
+                                    "method": "GET"
+                                };
+                                functionObject.execute(config);
+                                setTimeout(function() {
+                                    self.isNotificationShow = false;
+                                    self.init()
+                                }, 3000);
+
+                            }
+                        });
+                    } else {
+                        table.addRow([data]);
+                        self.notificationContent = "Link saved.";
+                        self.isNotificationShow = true;
+                        var functions = catalyst.function;
+                        var functionObject = functions.functionId("ZLinks");
+                        var config = {
+                            "args": { "name": self.id, "clear": "true" },
+                            "method": "GET"
+                        };
+                        functionObject.execute(config);
+                        setTimeout(function() {
+                            self.isNotificationShow = false;
+                            self.init()
+                        }, 3000);
+                    }
+
                 } catch {
                     console.log("Error occured")
                 }
             },
             addLink() {
+
                 this.links.unshift({
                     linkid: uuidv4(),
                     category: "",
@@ -679,36 +714,25 @@
                     url: "",
                     image: "https://ik.imagekit.io/youaskwebuild/iconmonstr-star-3-240_P3ejnMp7r.png"
                 });
+
                 this.selected = 0;
             },
             deleteLink(index) {
-                
+
                 var data = this.links[index];
-                let searchObj = {
-                    "search": data.linkid,
-                    "search_table_columns": {
-                        "links": ["linkid"]
-                    }
-                };
+                var datastore = catalyst.table;
+                var table = datastore.tableId('links');
+
                 var self = this;
                 self.links.splice(index, 1);
-                catalyst.search.searchQuery(searchObj).then(function(searchRes) {
-                    if (searchRes.content.links) {
-                        var link = searchRes.content.links[0];
-                        
-                        var datastore = catalyst.table;
+                var row = table.rowId(data["ROWID"]);
+                row.delete();
+                self.notificationContent = "Link removed.";
 
-                        var table = datastore.tableId('links');
-                        var row = table.rowId(link["ROWID"]);
-                        row.delete();
-                        self.notificationContent = "Link removed.";
-                        
-                        this.isNotificationShow = true;
-                        setTimeout(function() {
-                            self.isNotificationShow = false;
-                        }, 3000);
-                    }
-                });
+                this.isNotificationShow = true;
+                setTimeout(function() {
+                    self.isNotificationShow = false;
+                }, 3000);
             },
             get listCategories() {
                 var categories = [];

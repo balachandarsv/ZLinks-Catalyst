@@ -1,10 +1,10 @@
 {
 	"deployment": {
-		"name": "ZLinks",
+		"name": "ShortURL",
 		"stack": "java8",
 		"type": "advancedio"
 	},
 	"execution": {
-		"main": "ZLinks"
+		"main": "ShortenURL"
 	}
 }

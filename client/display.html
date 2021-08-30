@@ -19,7 +19,7 @@
     <script src="/__catalyst/sdk/init.js"></script>
 </head>
 
-<body class="w-full h-full overflow-scroll font-sans bg-no-repeat bg-gradient-to-b from-red-300 to-pink-300">
+<body class="w-full h-screen overflow-scroll font-sans bg-no-repeat bg-gradient-to-b from-red-300 to-pink-300">
     <div class="fixed top-0 left-0 z-50 block w-full h-full bg-no-repeat bg-gradient-to-b from-red-300 to-pink-300" :class="!loading ? 'hidden':'flex items-center justify-center'">
         <span class="text-green-500">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-32 h-32 text-white animate-spin" fill="currentColor" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@
         </div>
         <div class="grid w-4/5 grid-cols-1 m-2 gap-y-2">
             <template x-for=" item in filteredlinks" :key="item">
-                <div class="flex flex-col cursor-pointer" :class="{ 'animate-shakex ': item.highlight === true }" @click="action(item.url, user, item.id)">
+                <div class="flex flex-col cursor-pointer" :class="{ 'animate-shakex ': item.highlight === true }" @click="action(item.url)">
                     <div class="p-4 bg-white shadow-md rounded-3xl">
                         <div class="flex flex-col">
                             <div class="flex flex-row gap-4">
@@ -73,15 +73,7 @@
                                 <div class="w-5/6 justify-evenly">
                                     <div class="flex flex-col flex-wrap ">
                                         <div class="flex flex-row">
-                                            <div class="w-10/12 overflow-hidden text-sm font-bold text-blue-700 break-words " x-text="item.category">
-                                            </div>
-                                            <div class="inline-flex flex-row-reverse w-2/12 gap-2 h-1/12">
-                                                <div class="flex items-center ">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                                                        <path d="M12 4.435c-1.989-5.399-12-4.597-12 3.568 0 4.068 3.06 9.481 12 14.997 8.94-5.516 12-10.929 12-14.997 0-8.118-10-8.999-12-3.568z" />
-                                                    </svg>
-                                                    <p class="text-sm" x-text="item.click"></p>
-                                                </div>
+                                            <div class="w-full overflow-hidden text-sm font-bold text-blue-700 break-words " x-text="item.category">
                                             </div>
                                         </div>
                                         <h2 class="flex text-lg font-semibold break-words" x-text="item.title"></h2>
@@ -192,14 +184,11 @@
 
         return x;
     }
-    async function update(user, pid) {
 
-    }
-
-    function action(url, user, pid) {
-        update(user, pid);
+    function action(url) {
+        
         setTimeout(function() {
-            window.location.href = url;
+            window.open(url, '_blank').focus();
         }, 1000);
     }
 
@@ -254,7 +243,7 @@
                     self.showyt = (x.social.showyt && x.social.youtube) ? (x.social.youtube !== "") : false;
                     self.github = x.social.github;
                     self.showgh = (x.social.showgh && x.social.github) ? (x.social.github !== "") : false;
-                    self.views = x.views;
+                    self.views = x.visits;
                     self.links = x.links;
 
                 })

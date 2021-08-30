@@ -1,4 +1,6 @@
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -27,34 +29,66 @@ public class ZLinks implements CatalystAdvancedIOHandler {
 	public void runner(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		try {
 			String name = (String) request.getParameter("name");
+			String clear = (String) request.getParameter("clear");
+
 			ZCCache cacheobj = ZCCache.getInstance();
 			ZCSegment segment = cacheobj.getSegmentInstance(2627000000414073L);
-			String cacheValue = segment.getCacheValue(name);
-			if (cacheValue != null) {
-				try {
-					JSONObject json = new JSONObject(cacheValue);
-					response.getWriter().write(json.toString());
-				} catch (Exception e) {
-					response.getWriter().write("{}");
+			if (name != null) {
+				if (clear != null) {
+					segment.deleteCacheObject(segment.getCacheObject(name));
+					response.setStatus(200);
+					return;
 				}
-			} else {
-
-				ZCSearchDetails search = ZCSearchDetails.getInstance();
-				search.setSearch(name);
-				HashMap<String, List<String>> map = new HashMap<String, List<String>>();
-				List<String> searchList1 = new ArrayList<String>();
-				searchList1.add("site");
-				map.put("zlinks", searchList1);
-				search.setSearchTableColumns(map);
-				ArrayList<ZCRowObject> rowList = ZCSearch.getInstance().executeSearchQuery(search);
-				if (rowList.size() > 0) {
-					ZCRowObject row = rowList.get(0);
-
-					String rowID = (String) row.get("ROWID");
+				String cacheValue = segment.getCacheValue(name);
+				ZCObject object = ZCObject.getInstance();
+				ZCTable table = object.getTable(2627000000407024L);
+				if (cacheValue != null) {
+					try {
+						JSONObject json = new JSONObject(cacheValue);
+						Long id = json.getLong("id");
+						ZCRowObject row = table.getRow(id);
+						row.set("visits", json.getLong("visits") + 1);
+						Runnable th = new Runnable() {
+							public void run() {
+								List<ZCRowObject> urows = new ArrayList<ZCRowObject>();
+								urows.add(row);
+								try {
+									table.updateRows(urows);
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+							}
+						};
+						th.run();
+						json.put("visits", json.getLong("visits") + 1);
+						ZCCacheObject cache = segment.putCacheValue(name, json.toString(), 1L);
+						json.remove("id");
+						response.getWriter().write(json.toString());
+					} catch (Exception e) {
+						e.printStackTrace();
+						response.getWriter().write("{}");
+					}
+				} else {
 
 					ZCObject obj = ZCObject.getInstance();
 					ZCTable tab = obj.getTable(2627000000407024L);
-					ZCRowObject drow = tab.getRow(Long.parseLong(rowID));
+					ZCRowObject drow = tab.getRow(Long.parseLong(name));
+
+					drow.set("visits", Long.parseLong((String) (drow.get("visits"))) + 1);
+					Runnable th = new Runnable() {
+						public void run() {
+							List<ZCRowObject> urows = new ArrayList<ZCRowObject>();
+							urows.add(drow);
+							try {
+								table.updateRows(urows);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
+					};
+
+					th.run();
+
 					JSONObject data = new JSONObject();
 					JSONObject social = new JSONObject();
 					org.json.simple.JSONObject drowJSON = drow.getRowObject();
@@ -85,8 +119,9 @@ public class ZLinks implements CatalystAdvancedIOHandler {
 					background.put("type", drowJSON.get("type"));
 					data.put("logo", drowJSON.get("logo"));
 					background.put("text", drowJSON.get("text"));
-
+					data.put("id", drowJSON.get("ROWID"));
 					data.put("search", "");
+					data.put("visits", drowJSON.get("visits"));
 					data.put("category", "");
 					data.put("views", 0);
 					data.put("showmd", false);
@@ -98,25 +133,32 @@ public class ZLinks implements CatalystAdvancedIOHandler {
 
 					for (ZCRowObject xrow : rows) {
 						org.json.simple.JSONObject linkjson = xrow.getRowObject();
-						JSONObject link = new JSONObject();
-						link.put("image", linkjson.get("image"));
-						link.put("description", linkjson.get("description"));
-						link.put("title", linkjson.get("title"));
-						link.put("url", linkjson.get("url"));
-						link.put("zuid", linkjson.get("zuid"));
-						link.put("highlight", linkjson.get("highlight"));
-						link.put("linkid", linkjson.get("linkid"));
-						link.put("category", linkjson.get("category"));
-						links.put(link);
+
+						if (zuid.equalsIgnoreCase((String) linkjson.get("zuid"))) {
+
+							Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS")
+									.parse((String) linkjson.get("CREATEDTIME"));
+
+							JSONObject link = new JSONObject();
+							link.put("image", linkjson.get("image"));
+							link.put("description", linkjson.get("description"));
+							link.put("title", linkjson.get("title"));
+							link.put("url", linkjson.get("url"));
+							link.put("id", linkjson.get("ROWID"));
+							link.put("time", date.getTime() / 1000);
+							link.put("highlight", linkjson.get("highlight"));
+							link.put("linkid", linkjson.get("linkid"));
+							link.put("category", linkjson.get("category"));
+							links.put(link);
+
+						}
 					}
 					data.put("links", links);
 
+					ZCCacheObject cache = segment.putCacheValue(name, data.toString(), 1L);
+					data.remove("id");
 					response.getWriter().write(data.toString());
 
-					LOGGER.log(Level.INFO, drow.getRowObject().toString());
-					ZCCacheObject cache = segment.putCacheValue(name, data.toString());
-				}else {
-					response.getWriter().write("{}");
 				}
 			}
 			response.setStatus(200);
